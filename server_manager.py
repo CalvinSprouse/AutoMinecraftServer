@@ -2,6 +2,7 @@ import os
 import wget
 import requests
 import shutil
+import platform
 import subprocess
 import pyinputplus as pyip
 from requests import get
@@ -9,12 +10,18 @@ from bs4 import BeautifulSoup
 
 
 # Constants
-BATCH_FILE_NAME = "auto_start.bat"
 USE_GUI = False
 CREATE_OPTION_TAG = "create"
 HOST_OPTION_TAG = "host"
 VERSION = "1.16.4"
 SERVER_FILE_NAME = "server_" + str(VERSION) + ".jar"
+PLATFORM = platform.system()
+
+BATCH_FILE_NAME = "auto_start.bat"
+if PLATFORM == "Linx":
+    BATCH_FILE_NAME == "auto_start.sh"
+elif PLATFORM == "Windows":
+    BATCH_FILE_NAME == "auto_start.bat"
 
 
 # Functions
@@ -93,13 +100,17 @@ def create():
     with cd("Servers/" + new_server):
         # create java starter
         with open(BATCH_FILE_NAME, "w") as file:
-            file.write("@ECHO OFF\njava -Xmx1024M -Xms1024M -jar server.jar nogui\nPause")
-
+            if PLATFORM == "Linux":
+                file.write("java -Xmx1024M -Xms1024M -jar server.jar nogui\nPause")
+            elif PLATFORM == "Windows":
+                file.write("@ECHO OFF\njava -Xmx1024M -Xms1024M -jar server.jar nogui\nPause")
         print("> Created " + BATCH_FILE_NAME + " and running")
-        print(os.getcwd())
 
         # run python start batch
-        subprocess.call(["sh", "./" + BATCH_FILE_NAME])
+        if PLATFORM == "Linux":
+            subprocess.call(["sh", "./" + BATCH_FILE_NAME])
+        elif PLATFORM == "Windows":
+            subprocess.call([r"" + BATCH_FILE_NAME])
 
         # accept EULA
         eulaText = []
@@ -112,42 +123,52 @@ def create():
             writer.close()
 
         print("> EULA accepted and server generated. Complete server.properties and run in host mode to launch server")
-    print("going main")
     main()
 
 
 def host():
     print(os.getcwd())
-    with cd("Servers"):
-        # check if servers exist
-        if len(list_servers()) < 1:
-            print("> No servers found create server first")
-            main()
+    try:
+        with cd("Servers"):
+            # check if servers exist
+            if len(list_servers()) < 1:
+                print("> No servers found create server first")
+                raise CDExitThrowable
 
-        # select a server
-        servers = list_servers()
-        server_selection = pyip.inputNum(prompt="\nServer Options:\n" + get_numbered_list(servers) + "\n\tSelect Server to Run:", min=0, max=len(servers)-1)
-        print("> Selected: " + str(server_selection) + " " + servers[server_selection])
+            # select a server
+            servers = list_servers()
+            server_selection = pyip.inputNum(prompt="\nServer Options:\n" + get_numbered_list(servers) + "\n\tSelect Server to Run:", min=0, max=len(servers)-1)
+            print("> Selected: " + str(server_selection) + " " + servers[server_selection])
 
-        # operate in server folder
-        with cd(servers[server_selection]):
-            # check if dir is empty
-            if not os.listdir().count("server.jar") > 0:
-                print("> No server.jar found copy server.jar or delete")
-                exit()
+            # operate in server folder
+            with cd(servers[server_selection]):
+                # check if dir is empty
+                if not os.listdir().count("server.jar") > 0:
+                    print("> No server.jar found copy server.jar from Assets or delete")
+                    exit()
 
-            # code for running the java based server
-            with open(BATCH_FILE_NAME, "w") as file:
-                if USE_GUI:
-                    file.write("@ECHO OFF\nTitle Connect To: " + str(get_ip_from_external()) + "\njava -Xmx1024M -Xms1024M -jar server.jar\nPause")
-                else:
-                    file.write("@ECHO OFF\nTitle Connect To: " + str(get_ip_from_external()) + "\njava -Xmx1024M -Xms1024M -jar server.jar nogui\nPause")
+                # code for running the java based server
+                with open(BATCH_FILE_NAME, "w") as file:
+                    if USE_GUI:
+                        if PLATFORM == "Linux":
+                            file.write("echo -en \"\\033]0;Connect To: " + str(get_ip_from_external()) + "\\a\"\njava -Xmx1024M -Xms1024M -jar server.jar\nPause")
+                        elif PLATFORM == "Windows":
+                            file.write("@ECHO OFF\nTitle Connect To: " + str(get_ip_from_external()) + "\njava -Xmx1024M -Xms1024M -jar server.jar\nPause")
+                    else:
+                        if PLATFORM == "Linux":
+                            file.write("echo -en \"\\033]0;Connect To: " + str(get_ip_from_external()) + "\\a\"\njava -Xmx1024M -Xms1024M -jar server.jar nogui\nPause")
+                        elif PLATFORM == "Windows":
+                            file.write("@ECHO OFF\nTitle Connect To: " + str(get_ip_from_external()) + "\njava -Xmx1024M -Xms1024M -jar server.jar nogui\nPause")
+                print("> Created " + BATCH_FILE_NAME + " and running")
+                print("> Connect to " + str(get_ip_from_external()))
 
-            print("> Created " + BATCH_FILE_NAME + " and running")
-            print("> Connect to " + str(get_ip_from_external()))
-
-            # run python start batch file
-            subprocess.call(["sh", "./" + BATCH_FILE_NAME])
+                # run python start batch
+                if PLATFORM == "Linux":
+                    subprocess.call(["sh", "./" + BATCH_FILE_NAME])
+                elif PLATFORM == "Windows":
+                    subprocess.call([r"" + BATCH_FILE_NAME])
+    except CDExitThrowable:
+        main()
 
 
 # Class
@@ -166,6 +187,10 @@ class cd:
         os.chdir(self.saved_path)
         if self.print_statement:
             print("> Operating in:\t" + str(os.getcwd()))
+
+
+class CDExitThrowable(Exception):
+    pass
 
 
 # Main
