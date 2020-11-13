@@ -13,6 +13,8 @@ from bs4 import BeautifulSoup
 USE_GUI = False
 CREATE_OPTION_TAG = "create"
 HOST_OPTION_TAG = "host"
+LIST_OPTION_TAG = "list servers"
+EXIT_OPTION_TAG = "exit"
 VERSION = "1.16.4"
 SERVER_FILE_NAME = "server_" + str(VERSION) + ".jar"
 PLATFORM = platform.system()
@@ -58,14 +60,26 @@ def get_download_link():
 
 
 def main():
-    print("in main | " + str(os.getcwd()))
-    operation = pyip.inputMenu(choices=[CREATE_OPTION_TAG, HOST_OPTION_TAG], prompt="Select an operation:\n", strip=True, numbered=True)
+    operation = pyip.inputMenu(
+        choices=[CREATE_OPTION_TAG, HOST_OPTION_TAG, LIST_OPTION_TAG, EXIT_OPTION_TAG],
+        prompt="Select an operation:\n",
+        strip=True,
+        numbered=True)
     print("> Selection operation " + str(operation))
 
     if operation == CREATE_OPTION_TAG:
         create()
-    else:
+    elif operation == HOST_OPTION_TAG:
         host()
+    elif operation == LIST_OPTION_TAG:
+        with cd("Servers"):
+            if len(list_servers()) > 0:
+                print("\nCurrent Servers:\n" + get_numbered_list(list_servers()) + "\n")
+            else:
+                print("\nCurrent Servers: None\n")
+        main()
+    elif operation == EXIT_OPTION_TAG:
+        exit()
 
 
 def create():
@@ -151,12 +165,12 @@ def host():
                 with open(BATCH_FILE_NAME, "w") as file:
                     if USE_GUI:
                         if PLATFORM == "Linux":
-                            file.write("echo -en \"\\033]0;Connect To: " + str(get_ip_from_external()) + "\\a\"\njava -Xmx1024M -Xms1024M -jar server.jar\nPause")
+                            file.write("echo -en \"\\033]0;Connect To: " + str(get_ip_from_external()) + "\\a\"\nip address show\njava -Xmx1024M -Xms1024M -jar server.jar\nPause")
                         elif PLATFORM == "Windows":
                             file.write("@ECHO OFF\nTitle Connect To: " + str(get_ip_from_external()) + "\njava -Xmx1024M -Xms1024M -jar server.jar\nPause")
                     else:
                         if PLATFORM == "Linux":
-                            file.write("echo -en \"\\033]0;Connect To: " + str(get_ip_from_external()) + "\\a\"\njava -Xmx1024M -Xms1024M -jar server.jar nogui\nPause")
+                            file.write("echo -en \"\\033]0;Connect To: " + str(get_ip_from_external()) + "\\a\"\nip address show\njava -Xmx1024M -Xms1024M -jar server.jar nogui\nPause")
                         elif PLATFORM == "Windows":
                             file.write("@ECHO OFF\nTitle Connect To: " + str(get_ip_from_external()) + "\njava -Xmx1024M -Xms1024M -jar server.jar nogui\nPause")
                 print("> Created " + BATCH_FILE_NAME + " and running")
