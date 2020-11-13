@@ -51,6 +51,7 @@ def get_download_link():
 
 
 def main():
+    print("in main | " + str(os.getcwd()))
     operation = pyip.inputMenu(choices=[CREATE_OPTION_TAG, HOST_OPTION_TAG], prompt="Select an operation:\n", strip=True, numbered=True)
     print("> Selection operation " + str(operation))
 
@@ -95,9 +96,10 @@ def create():
             file.write("@ECHO OFF\njava -Xmx1024M -Xms1024M -jar server.jar nogui\nPause")
 
         print("> Created " + BATCH_FILE_NAME + " and running")
+        print(os.getcwd())
 
         # run python start batch
-        subprocess.call([r"" + BATCH_FILE_NAME])
+        subprocess.call(["sh", "./" + BATCH_FILE_NAME])
 
         # accept EULA
         eulaText = []
@@ -110,6 +112,7 @@ def create():
             writer.close()
 
         print("> EULA accepted and server generated. Complete server.properties and run in host mode to launch server")
+    print("going main")
     main()
 
 
@@ -144,7 +147,7 @@ def host():
             print("> Connect to " + str(get_ip_from_external()))
 
             # run python start batch file
-            subprocess.call([r"" + BATCH_FILE_NAME])
+            subprocess.call(["sh", "./" + BATCH_FILE_NAME])
 
 
 # Class
