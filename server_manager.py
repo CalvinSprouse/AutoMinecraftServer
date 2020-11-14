@@ -5,26 +5,29 @@ import shutil
 import socket
 import platform
 import subprocess
+import traceback
 import pyinputplus as pyip
 from requests import get
 from bs4 import BeautifulSoup
 
 
-# Constants
-USE_GUI = False
+# Option Names
 CREATE_OPTION_TAG = "create"
 HOST_OPTION_TAG = "host"
 LIST_OPTION_TAG = "list servers"
 EXIT_OPTION_TAG = "exit"
+
+# Constants
+USE_GUI = False
 VERSION = "1.16.4"
 SERVER_FILE_NAME = "server_" + str(VERSION) + ".jar"
 PLATFORM = platform.system()
 
 BATCH_FILE_NAME = "auto_start.bat"
-if PLATFORM == "Linx":
-    BATCH_FILE_NAME == "auto_start.sh"
-elif PLATFORM == "Windows":
-    BATCH_FILE_NAME == "auto_start.bat"
+if PLATFORM.lower() == "linux":
+    BATCH_FILE_NAME = "auto_start.sh"
+elif PLATFORM.lower() == "windows":
+    BATCH_FILE_NAME = "auto_start.bat"
 
 
 # Functions
@@ -236,5 +239,12 @@ if __name__ == "__main__":
             print("> Downloading " + str(VERSION) + " server file")
             wget.download(str(get_download_link()), SERVER_FILE_NAME)
 
+    # start main loop with error handling
     print("> Init complete running main")
-    main()
+    try:
+        main()
+    except Exception:
+        print(traceback.print_exec())
+    finally:
+        print("> Closing")
+        exit()
