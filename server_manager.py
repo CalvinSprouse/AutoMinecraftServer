@@ -2,6 +2,7 @@ import os
 import wget
 import requests
 import shutil
+import socket
 import platform
 import subprocess
 import pyinputplus as pyip
@@ -35,16 +36,21 @@ def get_ip_from_external():
     return get("https://api.ipify.org").text
 
 
+def get_ip_from_internal():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
+
+
 def list_servers():
     return [item for item in os.listdir()]
-
-
-def user_selected_enum(enum_type, decision_name=""):
-    while True:
-        user_selection = enum_type.getMode(enum_type.getOptionsList()[pyip.inputNum(prompt="\n" + decision_name + " Option(s):\n" + get_numbered_list(enum_type.getOptionsList()) + "\n\tSelect Option:", min=0, max=len(enum_type.getOptionsList()))])
-        if pyip.inputYesNo(prompt="(Y/N) Chosen " + decision_name + ": " + user_selection.name + "?") == "yes":
-            break
-    return user_selection
 
 
 def get_download_link():
@@ -163,16 +169,18 @@ def host():
 
                 # code for running the java based server
                 with open(BATCH_FILE_NAME, "w") as file:
+                    linux_title = "echo -en \"\\033]0;Connect To: " + str(get_ip_from_external()) + " Or LAN: " + str(get_ip_from_internal()) + "\\a\""
+                    windows_title = "@ECHO OFF\nTitle Connect To: " + str(get_ip_from_external()) + " Or LAN: " + str(get_ip_from_internal()) + "\n"
                     if USE_GUI:
                         if PLATFORM == "Linux":
-                            file.write("echo -en \"\\033]0;Connect To: " + str(get_ip_from_external()) + "\\a\"\nip address show\njava -Xmx1024M -Xms1024M -jar server.jar\nPause")
+                            file.write(linux_title + "\nip address show\njava -Xmx1024M -Xms1024M -jar server.jar\nPause")
                         elif PLATFORM == "Windows":
-                            file.write("@ECHO OFF\nTitle Connect To: " + str(get_ip_from_external()) + "\njava -Xmx1024M -Xms1024M -jar server.jar\nPause")
+                            file.write(windows_title + "\njava -Xmx1024M -Xms1024M -jar server.jar\nPause")
                     else:
                         if PLATFORM == "Linux":
-                            file.write("echo -en \"\\033]0;Connect To: " + str(get_ip_from_external()) + "\\a\"\nip address show\njava -Xmx1024M -Xms1024M -jar server.jar nogui\nPause")
+                            file.write(linux_title + "\nip address show\njava -Xmx1024M -Xms1024M -jar server.jar nogui\nPause")
                         elif PLATFORM == "Windows":
-                            file.write("@ECHO OFF\nTitle Connect To: " + str(get_ip_from_external()) + "\njava -Xmx1024M -Xms1024M -jar server.jar nogui\nPause")
+                            file.write(windows_title + "\njava -Xmx1024M -Xms1024M -jar server.jar nogui\nPause")
                 print("> Created " + BATCH_FILE_NAME + " and running")
                 print("> Connect to " + str(get_ip_from_external()))
 
