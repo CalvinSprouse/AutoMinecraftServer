@@ -5,3 +5,4 @@ idna==2.10
 requests==2.25.1
 soupsieve==2.2
 urllib3==1.26.3
+wget==3.2
