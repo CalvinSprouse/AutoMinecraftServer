@@ -1,5 +1,3 @@
-# run the server manager
-
 """ TASKS
 run.py should handle configuring of files and calling for asset update
 run.py should provide base level UI and options which then disperse requests to sub programs
@@ -7,16 +5,17 @@ run.py should be starter and closer and provide the ip address from a seperate p
 args to pass: version (if blank configure version on server basis)
 """
 
-import requests
-import os
-import wget
+from bs4 import BeautifulSoup
 import config
+import datetime
+import os
+import platform
+import PySimpleGUI as sg
+import requests
 import shutil
 import socket
-import datetime
-import PySimpleGUI as sg
 import server
-from bs4 import BeautifulSoup
+import wget
 
 
 # variables
@@ -26,8 +25,10 @@ selected_element = "NONE"
 selected_value = "NONE"
 version = "1_16_5"
 
-ALLOCATED_RAM_GB = 4
-BATCH_FILE_NAME = "auto_start.sh"
+allotcated_RAM_GB = 2
+BATCH_FILE_NAME = "auto_start.bat"
+if str(platform.system()).lower() == "linux":
+    BATCH_FILE_NAME = "auto_start.sh"
 
 
 # context manager
@@ -82,7 +83,7 @@ def get_local_ip():
 def create_server(name):
     new_java_server = server.JavaServer(name, version)
     server_jar_name = "minecraft_server_" + version + ".jar"
-    batch_command = "java -Xmx" + str(1024*ALLOCATED_RAM_GB) + "M -Xms" + str(1024*ALLOCATED_RAM_GB) + "M -jar " + server_jar_name
+    batch_command = "java -Xmx" + str(1024*int(allotcated_RAM_GB)) + "M -Xms" + str(1024*int(allotcated_RAM_GB)) + "M -jar " + server_jar_name
     if not new_java_server.does_exist():
         new_java_server.create_self()
         shutil.copy2("Assets/" + server_jar_name, "Servers/" + new_java_server.get_name() + "/" + server_jar_name)
@@ -110,6 +111,7 @@ def edit_server(name):
     global restart_edit_window_on_close
     global selected_element
     global selected_value
+    global allotcated_RAM_GB
 
     java_server = server.JavaServer(name, version)
     if java_server.does_exist():
@@ -125,9 +127,19 @@ def edit_server(name):
             reader.close()
         print(attributes)
 
+        batch_command_lines = []
+        with open(config.SERVER_SAVE_LOCATION + java_server.get_name() + "/" + BATCH_FILE_NAME, "r") as reader:
+            batch_command_lines = reader.readlines()
+            reader.close()
+        batch_command_lines = batch_command_lines[0]
+        batch_command_lines = batch_command_lines.split("Xmx")[1]
+        batch_command_lines = batch_command_lines.split("M")[0]
+        allotcated_RAM_GB = str(int(batch_command_lines)/1024)
+
         edit_layout = [
                     [sg.Text("Select element to edit"), sg.Listbox(values=attributes, size=(40, 20)), sg.Button("Select")],
                     [sg.Text("Element: " + str(selected_element) + " = " + str(selected_value)), sg.Text("New Value"), sg.InputText(""), sg.Button("Update")],
+                    [sg.Text(java_server.get_name() + " RAM Allocation: " + str(allotcated_RAM_GB) + "GB"), sg.InputText(), sg.Button("Update RAM")],
                     [sg.Button("Exit Editor")]
         ]
         edit_window = sg.Window("Server Editor", edit_layout, size=(800, 600))
@@ -169,6 +181,15 @@ def edit_server(name):
                 edit_window.close()
                 break
 
+            if event == "Update RAM":
+                print("New RAM: " + allotcated_RAM_GB)
+                allotcated_RAM_GB = values[2].strip()
+
+                # refresh window
+                restart_edit_window_on_close = True
+                edit_window.close()
+                break
+
 
 def host_server(name):
     java_server = server.JavaServer(name, version)
@@ -197,6 +218,7 @@ def get_server_list():
 
 
 def run_window():
+    global allotcated_RAM_GB
     global restart_window_on_close
     global restart_edit_window_on_close
 
@@ -205,6 +227,7 @@ def run_window():
             [sg.Text("Create Server: "), sg.InputText(), sg.Button("Confirm Creation")],
             [sg.Text("Select Server:"), sg.Listbox(values=get_server_list(), size=(40, 10)), sg.Button("Host"), sg.Button("Edit")],
             [sg.Button("Update Server List")],
+            [sg.Text("Current RAM Allocation: " + str(allotcated_RAM_GB) + "GB"), sg.InputText(), sg.Button("Update")],
             [sg.Button("Exit")]
             ]
 
@@ -229,14 +252,20 @@ def run_window():
                 host_server(values[1][0])
                 exit()
         if event == "Edit":
+            stored_RAM = allotcated_RAM_GB
             print("Server to edit: ", values[1][0])
             restart_edit_window_on_close = True
             while restart_edit_window_on_close:
                 edit_server(str(values[1][0]).strip())
+            allotcated_RAM_GB = stored_RAM
+            break
+        if event == "Update":
+            print("New RAM: ", values[2])
+            allotcated_RAM_GB = values[2].strip()
+            break
         if event == "Update Server List" or event == "Confirm Creation":
             break
         print("You pressed ", event)
-
     window.close()
 
 
