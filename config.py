@@ -1,0 +1,2 @@
+ASSET_SAVE_LOCATION = "Assets/"
+SERVER_SAVE_LOCATION = "Servers/"
