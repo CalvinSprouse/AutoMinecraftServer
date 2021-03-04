@@ -185,6 +185,12 @@ def edit_server(name):
                 print("New RAM: " + allotcated_RAM_GB)
                 allotcated_RAM_GB = values[2].strip()
 
+                server_jar_name = "minecraft_server_" + java_server.get_version() + ".jar"
+                batch_command = "java -Xmx" + str(1024*int(allotcated_RAM_GB)) + "M -Xms" + str(1024*int(allotcated_RAM_GB)) + "M -jar " + server_jar_name
+                with open(config.SERVER_SAVE_LOCATION + java_server.get_name() + "/" + BATCH_FILE_NAME, "w") as writer:
+                    writer.writelines([batch_command])
+                    writer.close()
+
                 # refresh window
                 restart_edit_window_on_close = True
                 edit_window.close()
