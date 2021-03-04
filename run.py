@@ -1,10 +1,3 @@
-""" TASKS
-run.py should handle configuring of files and calling for asset update
-run.py should provide base level UI and options which then disperse requests to sub programs
-run.py should be starter and closer and provide the ip address from a seperate program
-args to pass: version (if blank configure version on server basis)
-"""
-
 from bs4 import BeautifulSoup
 import config
 import datetime
