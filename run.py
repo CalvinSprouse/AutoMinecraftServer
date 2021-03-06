@@ -3,6 +3,7 @@ import config
 import datetime
 import os
 import platform
+from multiprocessing import Process
 import PySimpleGUI as sg
 import requests
 import shutil
@@ -157,7 +158,7 @@ def edit_server(name):
 
             if event == "Update":
                 print(values[1])
-                attributes[attributes.index(str(selected_element + "=" + selected_value))] = str(selected_element + "=" + values[1][0].strip() + "\n")
+                attributes[attributes.index(str(selected_element + "=" + selected_value))] = str(selected_element + "=" + values[1].strip() + "\n")
 
                 with open(config.SERVER_SAVE_LOCATION + java_server.get_name() + "/server.properties", "w") as writer:
                     attributes.insert(0, "#" + datetime.datetime.now().strftime("%b-%d-%I%M%p-%G"))
@@ -190,6 +191,20 @@ def edit_server(name):
                 break
 
 
+def host_server_window():
+    host_layout = [
+                [sg.Text("Hosting Server NOTE: Screen Will Not Update")],
+                [sg.Text("Internal IP: " + str(get_local_ip()))],
+                [sg.Text("External IP: " + str(get_external_ip()))]
+    ]
+    host_window = sg.Window("Host Window", host_layout)
+    while True:
+        event, values = host_window.read(timeout=1)
+        if event == sg.WIN_CLOSED:
+            break
+    host_window.close()
+
+
 def host_server(name):
     java_server = server.JavaServer(name, version)
     if java_server.does_exist():
@@ -198,17 +213,12 @@ def host_server(name):
             with open(BATCH_FILE_NAME, "r") as reader:
                 terminal_command = reader.readlines()[0]
                 reader.close()
-            host_layout = [
-                        [sg.Text("Hosting Server NOTE: Screen Will Not Update")],
-                        [sg.Text("Internal IP: " + str(get_local_ip()))],
-                        [sg.Text("External IP: " + str(get_external_ip()))]
-            ]
-            host_window = sg.Window("Host Window", host_layout)
-            while True:
-                event, values = host_window.read(timeout=1)
+                
+                # run a seperate process for the hosting window
+                host_window_process = Process(target=host_server_window)
+                host_window_process.start()
+                
                 os.system(terminal_command)
-                host_window.close()
-                break
             exit()
 
 
