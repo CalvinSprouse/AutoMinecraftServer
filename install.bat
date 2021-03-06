@@ -1,2 +1,1 @@
 python install.py
-pause

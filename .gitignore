@@ -3,6 +3,7 @@
 
 /Servers/*
 /Assets/*
+run.bat
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
